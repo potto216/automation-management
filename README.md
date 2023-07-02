@@ -1,5 +1,5 @@
-#  ls
-
+#  Automation Management
+The purpose of this repository is to maintain the setup for the systems that are runnning the code bases
 
 ## Setup Ansible on  5.15.90.1-microsoft-standard-WSL2 (Ubuntu)
 Install ansible using the following steps.
