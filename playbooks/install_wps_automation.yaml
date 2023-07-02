@@ -10,7 +10,7 @@
     - name: Set destination directory from environment variable
       set_fact:
         remote_root_path: "/home/user/bluetooth/wps"
-        automation_management_dir: "{{ lookup('env', 'HOME') }}/automation_management
+        automation_management_dir: "{{ lookup('env', 'HOME') }}/automation_management"
         files_dir: "{{ lookup('env', 'HOME') }}/automation_management/files" 
 
     - name: Ensure destination directory exists
