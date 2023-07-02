@@ -1,0 +1,33 @@
+# Ignore retry files
+*.retry
+
+# Ignore Python bytecode
+__pycache__/
+*.py[cod]
+
+# Ignore system files
+.*.sw*
+*~
+.DS_Store
+
+# Ignore Ansible temporary/backup files
+*.bak
+*.tmp
+
+# Ignore Vagrant and other provisioning files
+.vagrant/
+.provision/
+
+# Ignore secret variables and files
+vault/
+group_vars/*.vault.yml
+vault_password_file.txt
+secrets.yaml
+
+# Ignore Ansible roles downloaded from Ansible Galaxy
+roles/
+!roles/.gitkeep
+
+# Ignore custom files/folders as per your project needs
+custom_folder/
+custom_file.txt

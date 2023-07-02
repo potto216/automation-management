@@ -1,0 +1,61 @@
+---
+- name: Setup comm_dev
+  hosts: comm_dev
+  become: yes
+  gather_facts: yes
+  vars_files:
+    - ../vault/secrets.yaml
+
+  tasks:
+    - name: Set destination directory from environment variable
+      set_fact:
+        remote_root_path: "/home/user/bluetooth/wps"
+        automation_management_dir: "{{ lookup('env', 'HOME') }}/automation_management
+        files_dir: "{{ lookup('env', 'HOME') }}/automation_management/files" 
+
+    - name: Ensure destination directory exists
+      ansible.builtin.file:
+        path: "{{ remote_root_path }}"
+        state: directory
+        mode: '0755'
+      become: yes
+      become_user: user
+
+    - name: Copy requirements.txt
+      ansible.builtin.copy:
+        src: "{{ files_dir }}/bluetooth_wps_python_requirements.txt"
+        dest: "{{ remote_root_path }}/requirements.txt"
+      become: yes
+      become_user: user
+
+    - name: Set permissions for requirements.txt
+      ansible.builtin.file:
+        path: "{{ remote_root_path }}/requirements.txt"
+        owner: user
+        group: user
+        mode: '0644'
+      become: yes
+      become_user: user
+        
+    - name: Execute bash script
+      ansible.builtin.shell: |
+        export PYENV_ROOT="/home/user/.pyenv"
+        command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
+        eval "$(pyenv init -)"
+        cd ${ROOT_PATH}
+        python --version
+        python -m venv .wps
+        source .wps/bin/activate
+        python -m pip install --upgrade pip
+        pip install wheel
+        pip install -r requirements.txt
+      args:
+        executable: /bin/bash
+      environment:
+        ROOT_PATH: "{{remote_root_path}}"
+      register: shell_output
+      become: yes
+      become_user: user
+
+    - name: Print shell command output
+      ansible.builtin.debug: var=shell_output.stdout

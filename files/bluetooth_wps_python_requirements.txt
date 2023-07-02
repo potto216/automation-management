@@ -1,0 +1,13 @@
+# mkdir wps
+# cd wp
+# python --version
+# python -m venv .wps
+# source .wps/bin/activate
+# python -m pip install --upgrade pip
+# pip install wheel
+# pip install -r requirements.txt
+#  192.168.147.128
+jupyterlab
+numpy
+matplotlib
+pandas
