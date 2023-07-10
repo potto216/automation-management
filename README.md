@@ -4,9 +4,9 @@ The purpose of this repository is to maintain the setup for the systems that are
 ## Setup Ansible on  5.15.90.1-microsoft-standard-WSL2 (Ubuntu)
 Install ansible using the following steps.
 ```
-sudo apt-get update
-sudo apt-get upgrade
-sudo apt-get install python3 python3-pip git libffi-dev libssl-dev -y
+sudo apt update
+sudo apt upgrade
+sudo apt install python3 python3-pip git libffi-dev libssl-dev -y
 sudo add-apt-repository --yes --update ppa:ansible/ansible
 sudo apt remove ansible
 sudo apt install ansible-core
@@ -35,7 +35,7 @@ Test with
 ansible all -i "localhost," -m shell -a 'echo Ansible is fun'
 ```
 
-For sudo access on the remote host store the password in an ansible-vault. To do that 
+For sudo access on the remote host store the password in an ansible-vault. To do that in the  automation_management repo root create the vault directory.
 ```
 mkdir vault
 ansible-vault create vault/secrets.yaml
@@ -59,6 +59,8 @@ Or to change it
 
 Finally if you do not want to specify the vault password when running playbooks create a text file in the vault directory containing just the vault password: 
 ```
+echo "password" >> vault/vault_password.txt
+# check with
 cat vault/vault_password.txt 
 password
 ```
