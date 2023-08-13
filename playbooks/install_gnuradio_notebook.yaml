@@ -1,5 +1,5 @@
 ---
-- name: Setup WPS Bluetooth Development Environment
+- name: Setup GNURadio Notebook Development Environment
   hosts: comm_dev
   become: yes
   gather_facts: yes
@@ -9,7 +9,7 @@
   tasks:
     - name: Set destination directory from environment variable
       set_fact:
-        remote_root_path: "/home/user/bluetooth/wps"
+        remote_root_path: "/home/user/sdr/gnuradio_notebook"
         local_automation_management_dir: "{{ lookup('env', 'HOME') }}/automation_management"
         local_files_dir: "{{ lookup('env', 'HOME') }}/automation_management/files" 
 
@@ -21,9 +21,9 @@
       become: yes
       become_user: user
 
-    - name: Check if Python virtual environment .wps exists
+    - name: Check if Python virtual environment .gnuradio_notebook exists
       ansible.builtin.stat:
-        path: "{{ remote_root_path }}/.wps"
+        path: "{{ remote_root_path }}/.gnuradio_notebook"
       register: venv
 
     - name: Create Python virtual environment if it doesn't 
@@ -31,12 +31,14 @@
         command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
         eval "$(pyenv init -)"
         python --version
-        python -m venv .wps
+        python -m venv .gnuradio_notebook
+        echo "<Create Python virtual environment if it doesn't> ls -la and the current directory is {`pwd`}"
+        ls -la
       args:
         chdir: "{{ remote_root_path }}"
         executable: /bin/bash
       environment:
-        PYENV_ROOT: "/home/user/.pyenv"  
+        PYENV_ROOT: "/home/user/.pyenv"
       become: yes
       become_user: user
       register: shell_output_venv_create
@@ -47,7 +49,7 @@
 
     - name: Copy Python requirements.txt
       ansible.builtin.copy:
-        src: "{{ local_files_dir }}/bluetooth_wps_python_requirements.txt"
+        src: "{{ local_files_dir }}/gnuradio_notebook_python_requirements.txt"
         dest: "{{ remote_root_path }}/requirements.txt"
       become: yes
       become_user: user
@@ -65,13 +67,13 @@
       ansible.builtin.shell: |
         command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
         eval "$(pyenv init -)"
-        cd ${ROOT_PATH}
         python --version
-        source .wps/bin/activate
+        source .gnuradio_notebook/bin/activate
         python -m pip install --upgrade pip
         pip install wheel
         pip install -r requirements.txt
       args:
+        chdir: "{{ remote_root_path }}"
         executable: /bin/bash
       environment:
         PYENV_ROOT: "/home/user/.pyenv"  
@@ -79,19 +81,6 @@
       become: yes
       become_user: user
 
-    - name: Print shell command output
+    - name: Print shell command output from Setup the Python environment and notebook
       ansible.builtin.debug: var=shell_output.stdout
 
-- name: Install multiple packages using apt
-  hosts: comm_dev
-  become: yes
-  gather_facts: yes
-  vars_files:
-    - ../vault/secrets.yaml
-  tasks:
-    - name: Media player for playing bluetooth
-      ansible.builtin.apt:
-        name:
-          - mplayer
-        state: present
-        update_cache: yes
