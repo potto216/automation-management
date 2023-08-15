@@ -77,3 +77,17 @@ To run the WPS automation playbook, execute the following:
 ansible-playbook install_wps_automation.yaml --vault-password-file ../vault/vault_password.txt
 ```
 
+### GNURadio SDR notebook
+
+```
+ansible-playbook install_gnuradio_notebook.yaml --vault-password-file ../vault/vault_password.txt
+```
+
+Test on the device with
+```
+cd ~/sdr/gnuradio_notebook
+source .gnuradio_notebook/bin/activate 
+export PYTHONPATH=$HOME/sdr/gnuradio_notebook/.gnuradio_notebook/lib/python3.10/site-packages:/usr/lib/python3/dist-packages:/usr/lib/python3/site-packages
+jupyter lab --LabApp.token='' 
+```
+
