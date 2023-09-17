@@ -1,7 +1,7 @@
 #  Automation Management
 The purpose of this repository is to maintain the setup for the systems that are runnning the code bases
 
-## Setup Ansible on  5.15.90.1-microsoft-standard-WSL2 (Ubuntu)
+## Setup Ansible on 5.15.90.1-microsoft-standard-WSL2 (Ubuntu)
 Install ansible using the following steps.
 ```
 sudo apt update
@@ -74,10 +74,37 @@ ansible-playbook playbook.yaml --vault-password-file ../vault/vault_password.txt
 ## Running playbooks
 To run the WPS automation playbook, execute the following:
 ```
+cd playbooks
 ansible-playbook install_wps_automation.yaml --vault-password-file ../vault/vault_password.txt
 ```
 
-### GNURadio SDR notebook
+## Launching with Visual Studio Code running from Windows
+First find the WSL distribution you are looking for. In this case it is the Ubuntu distribution
+```
+C:\Users\user>wsl --list --verbose
+  NAME            STATE           VERSION
+* Ubuntu          Running         2
+  Ubuntu-22.04    Running         2
+```
+
+Find the repo on the distribution
+```
+C:\Users\user>dir \\wsl$\Ubuntu\home\user\automation_management
+ Volume in drive \\wsl$\Ubuntu has no label.
+
+ Directory of \\wsl$\Ubuntu\home\user\automation_management
+
+07/02/2023  09:53 AM    <DIR>          vault
+07/02/2023  07:37 AM               513 .gitignore
+08/13/2023  03:12 PM             2,998 README.md
+...
+```
+Launch Visual Studio Code
+```
+code \\wsl$\Ubuntu\home\user\automation_management
+```
+
+## Example: Setting up the GNURadio SDR notebook
 
 ```
 ansible-playbook install_gnuradio_notebook.yaml --vault-password-file ../vault/vault_password.txt

@@ -1,0 +1,135 @@
+---
+- name: Setup Harmony Bluetooth Development Environment
+  hosts: comm_dev
+  become: yes
+  gather_facts: yes
+  vars_files:
+    - ../vault/secrets.yaml
+
+  tasks:
+    - name: Set destination directory from environment variable
+      set_fact:
+        remote_root_path: "/home/user/src/harmony_examples"
+        local_automation_management_dir: "{{ lookup('env', 'HOME') }}/automation_management"
+        local_files_dir: "{{ lookup('env', 'HOME') }}/automation_management/files" 
+
+    - name: Ensure destination directory exists
+      ansible.builtin.file:
+        path: "{{ remote_root_path }}"
+        state: directory
+        mode: '0755'
+      become: yes
+      become_user: user
+
+    # Additional task to clone the git repository if it doesn't exist
+    - name: Clone harmony-examples repository if not exists
+      ansible.builtin.git:
+        repo: 'https://github.com/potto216/harmony-examples.git'
+        dest: "{{ remote_root_path }}"
+        update: no
+      become: yes
+      become_user: user
+ 
+    - name: Check if Python virtual environment .harmony exists
+      ansible.builtin.stat:
+        path: "{{ remote_root_path }}/.harmony"
+      register: venv
+
+    - name: Create Python virtual environment if it doesn't exist
+      ansible.builtin.shell: |
+        command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
+        eval "$(pyenv init -)"
+        python --version
+        python -m venv .harmony
+      args:
+        chdir: "{{ remote_root_path }}"
+        executable: /bin/bash
+      environment:
+        PYENV_ROOT: "/home/user/.pyenv"  
+      become: yes
+      become_user: user
+      register: shell_output_venv_create
+      when: not venv.stat.exists
+
+    - name: Print shell command output virt env
+      ansible.builtin.debug: var=shell_output_venv_create.stdout
+
+    - name: Setup the Python environment and notebook
+      ansible.builtin.shell: |
+        command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
+        eval "$(pyenv init -)"
+        cd ${ROOT_PATH}
+        python --version
+        source .harmony/bin/activate
+        python -m pip install --upgrade pip
+        pip install wheel
+        pip install -r requirements.txt
+      args:
+        executable: /bin/bash
+      environment:
+        PYENV_ROOT: "/home/user/.pyenv"
+        ROOT_PATH: "{{ remote_root_path }}"  
+      register: shell_output
+      become: yes
+      become_user: user
+
+    - name: Print shell command output
+      ansible.builtin.debug: var=shell_output.stdout
+
+- name: Install MongoDB packages using apt
+  hosts: comm_dev
+  become: yes
+  gather_facts: yes
+  vars_files:
+    - ../vault/secrets.yaml
+
+  tasks:
+    - name: Install MongoDB prereq
+      ansible.builtin.apt:
+        name:
+          - gnupg
+          - curl
+        state: present
+
+    # Copy mongodb_install.sh script to the remote server
+    - name: Copy mongodb_install.sh script to remote server
+      ansible.builtin.copy:
+        src: "{{ local_files_dir }}/mongodb_install.sh"
+        dest: "{{ remote_root_path }}/mongodb_install.sh"
+      become: yes
+      become_user: user
+
+    # Make the script executable
+    - name: Make mongodb_install.sh script executable
+      ansible.builtin.file:
+        path: "{{ remote_root_path }}/mongodb_install.sh"
+        mode: '0755'
+      become: yes
+      become_user: user
+
+    # Execute the script with sudo commands inside so need to run as root
+    - name: Run mongodb_install.sh script
+      ansible.builtin.shell:
+        cmd: "{{ remote_root_path }}/mongodb_install.sh"
+      become: yes
+      become_user: root
+
+    # Delete the script after all tasks are completed
+    - name: Delete mongodb_install.sh script
+      ansible.builtin.file:
+        path: "{{ remote_root_path }}/mongodb_install.sh"
+        state: absent
+      become: yes
+      become_user: user
+
+    - name: Install MongoDB packages
+      ansible.builtin.apt:
+        name:
+          - mongodb-org
+        state: present
+
+    - name: Start MongoDB service
+      ansible.builtin.systemd:
+        name: mongod
+        state: started
+        enabled: yes
