@@ -26,7 +26,7 @@ ssh user@localhost
 Also add the remote host IP address and DNS name (if available) to the `/etc/ansible/hosts` file. In the below example **comm_dev** is the name of the VM I added to the Window's `%SystemRoot%\System32\drivers\etc\hosts` file. This allows me to have VMs on different machines doing the same thing and all can be referenced from Windows with **comm_dev**.
 ```
 sudo vi /etc/ansible/hosts
-# add the below line
+# add the below line such as
 comm_dev ansible_host=192.168.141.128
 ```
 
