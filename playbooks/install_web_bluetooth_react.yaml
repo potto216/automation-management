@@ -1,0 +1,132 @@
+---
+- name: Setup web bluetooth react web server
+  hosts: comm_dev
+  become: yes
+  gather_facts: yes
+  vars_files:
+    - ../vault/secrets.yaml
+  vars:
+    project_directory: /home/user/src
+    tools_directory: /home/user/tools
+    tools_arc_directory: /home/user/tools/arc
+    nodejs_name: node-v18.18.0-linux-x64
+    nodejs_package: "{{ nodejs_name }}.tar.xz"
+    nodejs_root_directory: "/home/user/tools"
+    nodejs_directory: "/home/user/tools/{{ nodejs_name }}"
+    repo_url: https://github.com/potto216/web-bluetooth-react.git
+  environment:
+    PATH: "{{nodejs_directory}}/bin:{{ ansible_env.PATH }}"
+ 
+
+  tasks:
+  - name: Update apt cache
+    apt:
+      update_cache: yes
+
+  - name: Install required packages
+    apt:
+      name:
+        - git
+        - curl
+      state: present
+
+  - name: Ensure project directory exists
+    file:
+      path: "{{ project_directory }}"
+      state: directory
+      owner: user
+      group: user
+      mode: '0755'
+
+  - name: Ensure tools directory exists
+    file:
+      path: "{{ tools_directory }}"
+      state: directory
+      owner: user
+      group: user
+      mode: '0755'
+
+  - name: Ensure tools arc directory exists
+    file:
+      path: "{{ tools_arc_directory }}"
+      state: directory
+      owner: user
+      group: user
+      mode: '0755'
+
+
+  - name: Clone the web-bluetooth-react repository
+    git:
+      repo: "{{ repo_url }}"
+      dest: "{{ project_directory }}/web_bluetooth_react"
+      clone: yes
+      update: yes
+    become_user: user
+
+  - name: Download Node.js tarball if not exists
+    get_url:
+      url: https://nodejs.org/dist/v18.18.0/node-v18.18.0-linux-x64.tar.xz
+      dest: "{{ tools_arc_directory }}/{{ nodejs_package }}"
+      mode: '0755'
+      force: no
+
+  - name: Ensure Node.js directory exists
+    file:
+      path: "{{ nodejs_directory }}"
+      state: directory
+      owner: user
+      group: user
+      mode: '0755'
+
+  - name: Check if Node.js is already extracted
+    stat:
+      path: "{{ nodejs_directory }}/bin/node"
+    register: nodejs_extracted
+
+  - name: Extract Node.js tarball to the tools directory
+    unarchive:
+      src: "{{ tools_arc_directory }}/{{ nodejs_package}}"
+      dest: "{{ nodejs_root_directory }}"
+      remote_src: yes
+      owner: user
+      group: user
+    when: not nodejs_extracted.stat.exists
+
+  - name: Check if node_modules directory exists
+    stat:
+      path: "{{ project_directory }}/web_bluetooth_react/node_modules"
+    register: node_modules_exists
+
+  - name: Fetch the content of /home/user/.profile
+    slurp:
+      src: /home/user/.profile
+    register: profile_content
+    become_user: user
+    become: yes
+    ignore_errors: yes  # in case .profile doesn't exist
+
+  - name: Convert .profile content to a string
+    set_fact:
+      profile_string: "{{ (profile_content['content'] | b64decode if profile_content['content'] is defined else '') | default('') }}"
+
+  - name: Append lines to /home/user/.profile if they don't exist at the end
+    lineinfile:
+      path: /home/user/.profile
+      line: "{{ item }}"
+      create: yes
+      state: present
+    loop:
+      - "# Nodejs"
+      - "NODEJS_VERSION=v18.18.0"
+      - "NODEJS_DISTRO=linux-x64"
+      - "export PATH=/home/user/tools/node-$NODEJS_VERSION-$NODEJS_DISTRO/bin:$PATH"
+    when: profile_string is not search(item + "$")
+    become_user: user
+    become: yes
+
+  - name: Install project dependencies
+    command:
+      cmd: "{{ nodejs_directory }}/bin/npm install"
+      chdir: "{{ project_directory }}/web_bluetooth_react"
+    become_user: user
+    when: not node_modules_exists.stat.exists
