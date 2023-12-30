@@ -1,0 +1,150 @@
+---
+- name: Setup General Communications Development Environment
+  hosts: comm_dev_group
+  become: yes
+  gather_facts: yes
+  vars_files:
+    - ../vault/secrets.yaml
+
+  tasks:
+    - name: Install dependencies for Pyenv
+      apt:
+        name:
+          - make
+          - build-essential
+          - libssl-dev
+          - zlib1g-dev
+          - libbz2-dev
+          - libreadline-dev
+          - libsqlite3-dev
+          - wget
+          - curl
+          - llvm
+          - libncurses5-dev
+          - libncursesw5-dev
+          - xz-utils
+          - tk-dev
+          - libffi-dev
+          - liblzma-dev
+          - git
+        state: present
+      become: yes
+      when: install_python
+
+    - name: Install Pyenv
+      shell: |
+        curl https://pyenv.run | bash
+      args:
+        creates: "$HOME/.pyenv"
+      environment:
+        HOME: "/home/user"
+      become: yes
+      become_user: user
+      when: install_python
+
+    - name: Set environment variables for Pyenv
+      environment:
+        HOME: "/home/user"
+      lineinfile:
+        path: "$HOME/.bashrc"
+        line: "{{ item }}"
+      with_items:
+        - 'export PYENV_ROOT="$HOME/.pyenv"'
+        - 'export PATH="$PYENV_ROOT/bin:$PATH"'
+        - 'eval "$(pyenv init --path)"'
+      become: yes
+      become_user: user
+      when: install_python
+
+    - name: Reload .bashrc to update environment variables
+      shell: . ~/.bashrc
+      become: yes
+      become_user: user
+      when: install_python
+
+    - name: Install Python 11 using Pyenv
+      shell: |
+        . /home/user/.bashrc
+        if ! pyenv versions | grep -q '3.11.7'; then
+          pyenv install 3.11.7
+        fi
+      environment:      
+        HOME: "/home/user"      
+        PATH: "/home/user/.pyenv/bin:{{ ansible_env.PATH }}"
+      become: yes
+      become_user: user
+      when: install_python
+
+    - name: Set Python 11 as the global python version
+      shell: |
+        . /home/user/.bashrc    
+        pyenv global 3.11.7
+      environment:
+        HOME: "/home/user"      
+        PATH: "/home/user/.pyenv/bin:{{ ansible_env.PATH }}"
+      become: yes
+      become_user: user
+      when: install_python
+
+    - name: Install Vim
+      apt:
+        name: vim
+        state: present
+      become: yes
+      when: install_vim
+
+    - name: Add .vimrc to /home/user
+      copy:
+        content: |
+          "" "This should be renamed .vimrc and go in the users root path
+          "" "will fix the arrow issue
+          set nocp
+
+          "" "will set the indent
+          set tabstop=2
+          "" "set tabstop=4
+
+          set backspace=indent,eol,start
+
+          set number
+          "" "syntax highlighting requires full vim support
+          set syntax=on
+        dest: "/home/user/.vimrc"
+        owner: user
+        group: user
+        mode: '0644'
+      become: yes
+      become_user: user
+      when: install_vim
+
+    - name: Install required Rust required packages
+      apt:
+        name: 
+          - curl
+          - build-essential
+        state: present
+      become: yes
+
+    - name: Download and Run Rustup Installer
+      become: yes
+      become_user: user
+      shell: |
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      environment:
+        HOME: "/home/user"
+        USER: "user"
+      args:
+        creates: "/home/user/.cargo/bin/rustup"
+
+    - name: Set Environment Variables for Rust
+      become: yes
+      become_user: user
+      lineinfile:
+        path: /home/user/.profile
+        line: 'export PATH="$HOME/.cargo/bin:$PATH"'
+        create: yes
+      args:
+        insertbefore: EOF
+      when: install_rust
+
+
