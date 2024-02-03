@@ -10,6 +10,7 @@
     - name: Install dependencies for Pyenv
       apt:
         name:
+          - curl
           - make
           - build-essential
           - libssl-dev
@@ -29,7 +30,7 @@
           - git
         state: present
       become: yes
-      when: install_python
+      when: install_python | default (false)
 
     - name: Install Pyenv
       shell: |
@@ -40,7 +41,7 @@
         HOME: "/home/user"
       become: yes
       become_user: user
-      when: install_python
+      when: install_python | default (false)
 
     - name: Set environment variables for Pyenv
       environment:
@@ -54,13 +55,13 @@
         - 'eval "$(pyenv init --path)"'
       become: yes
       become_user: user
-      when: install_python
+      when: install_python | default (false)
 
     - name: Reload .bashrc to update environment variables
       shell: . ~/.bashrc
       become: yes
       become_user: user
-      when: install_python
+      when: install_python | default (false)
 
     - name: Install Python 11 using Pyenv
       shell: |
@@ -73,7 +74,7 @@
         PATH: "/home/user/.pyenv/bin:{{ ansible_env.PATH }}"
       become: yes
       become_user: user
-      when: install_python
+      when: install_python | default (false)
 
     - name: Set Python 11 as the global python version
       shell: |
@@ -84,14 +85,14 @@
         PATH: "/home/user/.pyenv/bin:{{ ansible_env.PATH }}"
       become: yes
       become_user: user
-      when: install_python
+      when: install_python | default (false)
 
     - name: Install Vim
       apt:
         name: vim
         state: present
       become: yes
-      when: install_vim
+      when: install_vim | default (false)
 
     - name: Add .vimrc to /home/user
       copy:
@@ -115,7 +116,7 @@
         mode: '0644'
       become: yes
       become_user: user
-      when: install_vim
+      when: install_vim | default (false)
 
     - name: Install required Rust required packages
       apt:
@@ -124,6 +125,7 @@
           - build-essential
         state: present
       become: yes
+      when: install_rust | default (false)
 
     - name: Download and Run Rustup Installer
       become: yes
@@ -135,6 +137,7 @@
         USER: "user"
       args:
         creates: "/home/user/.cargo/bin/rustup"
+      when: install_rust | default (false)
 
     - name: Set Environment Variables for Rust
       become: yes
@@ -145,6 +148,6 @@
         create: yes
       args:
         insertbefore: EOF
-      when: install_rust
+      when: install_rust | default (false)
 
 

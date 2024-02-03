@@ -1,0 +1,65 @@
+---
+- name: Setup Matter.js build environment
+  hosts: all
+  hosts: comm_dev_group
+  become: yes
+  gather_facts: yes
+  vars_files:
+    - ../vault/secrets.yaml
+  vars:
+    node_version: "node"  # Use "node" for the latest version or specify a version like "14.x"
+    user_home: "/home/user"  # Adjust this to the actual user's home directory
+
+
+  tasks:
+    - name: Ensure nvm (Node Version Manager) is installed
+      shell: |
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+      args:
+        creates: "{{ user_home }}/.nvm/nvm.sh"
+      environment:
+        HOME: "{{ user_home }}"
+      become: yes
+      become_user: user
+
+    - name: Install the latest version of Node.js
+      shell: |
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+        nvm install {{ node_version }}
+      environment:
+        HOME: "{{ user_home }}"
+      become: yes
+      become_user: user
+
+    - name: Create matter directory in the user's home if it doesn't exist
+      file:
+        path: "{{ user_home }}/matter"
+        state: directory
+        owner: user
+        group: user
+      become: yes
+
+    - name: Clone matter.js repository
+      git:
+        repo: "https://github.com/project-chip/matter.js"
+        dest: "{{ user_home }}/matter/matter.js"
+        clone: yes
+        update: yes
+      become: yes
+      become_user: user
+
+    - name: Install matter.js dependencies
+      shell: |
+        export NVM_DIR="{{ user_home }}/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+        [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion (optional)
+        cd {{ user_home }}/matter/matter.js
+        npm install
+      environment:
+        HOME: "{{ user_home }}"
+      become: yes
+      become_user: user
+
+
+
