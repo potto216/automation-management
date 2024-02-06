@@ -1,5 +1,5 @@
 ---
-- name: Setup Matter.js build environment
+- name: Setup Matter build environment
   hosts: all
   hosts: comm_dev_group
   become: yes
@@ -21,6 +21,7 @@
         HOME: "{{ user_home }}"
       become: yes
       become_user: user
+      when: install_nodejs | default (false)
 
     - name: Install the latest version of Node.js
       shell: |
@@ -31,6 +32,7 @@
         HOME: "{{ user_home }}"
       become: yes
       become_user: user
+      when: install_nodejs | default (false)
 
     - name: Create matter directory in the user's home if it doesn't exist
       file:
@@ -48,6 +50,7 @@
         update: yes
       become: yes
       become_user: user
+      when: install_matterjs | default (false)
 
     - name: Install matter.js dependencies
       shell: |
@@ -60,6 +63,124 @@
         HOME: "{{ user_home }}"
       become: yes
       become_user: user
+      when: install_matterjs | default (false)
 
+    - name: Clone connectedhomeip repository
+      git:
+        repo: "https://github.com/project-chip/connectedhomeip"
+        dest: "{{ user_home }}/matter/connectedhomeip"
+        clone: yes
+        update: yes
+      become: yes
+      become_user: user
+      when: install_connectedhomeip | default (false)
 
+    - name: Install prerequisites for building connectedhomeip
+      apt:
+        name:
+          - git
+          - gcc
+          - g++
+          - pkg-config
+          - libssl-dev
+          - libdbus-1-dev
+          - libglib2.0-dev
+          - libavahi-client-dev
+          - ninja-build
+          - python3-venv
+          - python3-dev
+          - python3-pip
+          - unzip
+          - libgirepository1.0-dev
+          - libcairo2-dev
+          - libreadline-dev
+          - libsdl2-dev  # For UI builds
+        state: present
+        update_cache: yes
+      when: install_connectedhomeip | default (false)
 
+    - name: Configure wpa_supplicant for permanent changes
+      block:
+        - name: Edit dbus-fi.w1.wpa_supplicant1.service to use config file
+          ansible.builtin.lineinfile:
+            path: /etc/systemd/system/dbus-fi.w1.wpa_supplicant1.service
+            regexp: '^ExecStart='
+            line: 'ExecStart=/sbin/wpa_supplicant -u -s -i wlan0 -c /etc/wpa_supplicant/wpa_supplicant.conf'
+            create: yes
+        - name: Add wpa_supplicant configuration
+          copy:
+            dest: /etc/wpa_supplicant/wpa_supplicant.conf
+            content: |
+              ctrl_interface=DIR=/run/wpa_supplicant
+              update_config=1
+            owner: root
+            group: root
+            mode: '0644'
+        - name: Reload systemd daemon to apply changes
+          systemd:
+            daemon_reload: yes
+      when: wpa_supplicant_matter_update | default (false)
+
+    - name: Create matter directory in the user's home if it doesn't exist
+      file:
+        path: "{{ user_home }}/matter"
+        state: directory
+        owner: user
+        group: user
+      become: yes
+      when: install_connectedhomeip | default (false)
+
+    - name: Clone connectedhomeip repository
+      git:
+        repo: "https://github.com/project-chip/connectedhomeip"
+        dest: "{{ user_home }}/matter/connectedhomeip"
+        clone: yes
+        update: yes
+        recursive: yes  # Ensures submodules are cloned       
+      become: yes
+      become_user: user
+      when: install_connectedhomeip_fake | default(false)
+
+    - name: Prepare for building connectedhomeip
+      become: yes
+      become_user: user
+      shell: |
+        cd {{ user_home }}/matter/connectedhomeip
+        source scripts/activate.sh
+      args:
+        executable: /bin/bash
+      when: install_connectedhomeip | default (false)
+
+    - name: Update the environment if needed
+      become: yes
+      become_user: user
+      shell: |
+        cd {{ user_home }}/matter/connectedhomeip
+        source scripts/bootstrap.sh
+      args:
+        executable: /bin/bash
+      when: install_connectedhomeip | default (false)
+
+    - name: Build connectedhomeip for the host OS
+      become: yes
+      become_user: user
+      shell: |
+        cd {{ user_home }}/matter/connectedhomeip
+        source scripts/activate.sh
+        gn gen out/host
+        ninja -C out/host
+      args:
+        executable: /bin/bash
+      when: install_connectedhomeip | default (false)
+
+    - name: Build the example application (chip-tool)
+      become: yes
+      become_user: user
+      shell: |
+        cd {{ user_home }}/matter/connectedhomeip
+        ./gn_build.sh  # For a full build
+        # Or for a specific example:
+        # scripts/examples/gn_build_example.sh examples/chip-tool SOME-PATH/
+      args:
+        executable: /bin/bash
+      when: install_connectedhomeip | default (false)
