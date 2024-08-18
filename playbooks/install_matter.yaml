@@ -1,6 +1,5 @@
 ---
 - name: Setup Matter build environment
-  hosts: all
   hosts: comm_dev_group
   become: yes
   gather_facts: yes
@@ -13,8 +12,9 @@
 
   tasks:
     - name: Ensure nvm (Node Version Manager) is installed
+  # make sure the version is updated to the latest shown with github.com/nvm-sh/nvm/blob/master/README.md
       shell: |
-        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.0/install.sh | bash
       args:
         creates: "{{ user_home }}/.nvm/nvm.sh"
       environment:

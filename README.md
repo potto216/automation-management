@@ -7,7 +7,7 @@ Install git
 sudo apt install git
 ```
 
-Clone the repository (Assuming HTTPS) and my preference is that the directory name uses underscores isntead of dashs to reduce the chance of conflicts
+Clone the repository (Assuming HTTPS) and my preference is that the directory name uses underscores instead of dashes to reduce the chance of conflicts
 ```
 git clone https://github.com/potto216/automation-management.git automation_management
 ```
@@ -116,9 +116,10 @@ code \\wsl$\Ubuntu\home\user\automation_management
 ```
 
 ## Playbook Examples
-If installing to Ubuntu make sure the ssh server has been installed with a command such as:
+If installing to Ubuntu make sure the ssh server has been installed and the ssh key from the ansible server has been copied over with commands such as:
 ```
 sudo apt install openssh-server
+ssh-copy-id user@replace-with-device-name
 ```
 
 ### Setting up the GNURadio SDR notebook playbook 
@@ -137,6 +138,16 @@ jupyter lab --LabApp.token=''
 ### To install the general communication development environment playbook
 ```
 ansible-playbook  -vv ./playbooks/setup_general_comm_dev.yaml --vault-password-file ./vault/vault_password.txt -l esp-rs-dev-01 --extra-vars "install_python=true install_vim=true install_rust=true"
+```
+
+### To setup a Matter.js on the device matter_js_test
+```
+# First install the general communication development environment playbook to setup python and vim 
+ansible-playbook  -vv ./playbooks/setup_general_comm_dev.yaml --vault-password-file ./vault/vault_password.txt -l matter_js_test --extra-vars "install_python=true python_version=3.12.5"
+
+# Now setup matter.js and its dependencies 
+ansible-playbook  -vv ./playbooks/install_matter.yaml --vault-password-file ./vault/vault_password.txt -l matter_js_test --extra-vars "install_nodejs=true install_matterjs=3.12.5"
+
 ```
 
 ## Ansible notes
