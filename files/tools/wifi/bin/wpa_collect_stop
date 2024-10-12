@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# Assign the first argument to a variable with a default value
+
+LOG_FILENAME="${1:-wpa_supplicant_final}"
+
+# Operations
+cp /home/user/logs/wpa_supplicant/wpa_supplicant.log /home/user/logs/wpa_supplicant/wpa_supplicant.tmp.log
+chmod 666 /home/user/logs/wpa_supplicant/wpa_supplicant.tmp.log
+mv -v /home/user/logs/wpa_supplicant/wpa_supplicant.tmp.log /home/user/"$LOG_FILENAME".log
+

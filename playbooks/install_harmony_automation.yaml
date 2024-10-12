@@ -1,6 +1,6 @@
 ---
 - name: Setup Harmony Bluetooth Development Environment
-  hosts: comm_dev_group
+  hosts: "{{ target_hosts | default('comm_dev_group') }}"
   become: yes
   gather_facts: yes
   vars_files:

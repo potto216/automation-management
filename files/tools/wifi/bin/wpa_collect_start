@@ -1,0 +1,3 @@
+#!/bin/bash
+
+truncate -s 0 /home/user/logs/wpa_supplicant/wpa_supplicant.log
