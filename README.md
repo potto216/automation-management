@@ -123,7 +123,7 @@ ssh-copy-id user@replace-with-device-name
 ```
 
 ### Setting up the GNURadio SDR notebook playbook 
-This assumes GNURadio is already setup.
+This assumes GNURadio is already setup. It will run on all hosts defined in the inventory file that match the playbook’s target group (as declared in the playbook’s hosts: directive). 
 ```
 ansible-playbook ./playbooks/install_gnuradio_notebook.yaml --vault-password-file ./vault/vault_password.txt
 ```
@@ -135,7 +135,7 @@ source .gnuradio_notebook/bin/activate
 export PYTHONPATH=$HOME/sdr/gnuradio_notebook/.gnuradio_notebook/lib/python3.10/site-packages:/usr/lib/python3/dist-packages:/usr/lib/python3/site-packages
 jupyter lab --LabApp.token='' 
 ```
-### To install the general communication development environment playbook
+### To install the general communication development environment playbook on device esp-rs-dev-01
 ```
 ansible-playbook  -vv ./playbooks/setup_general_comm_dev.yaml --vault-password-file ./vault/vault_password.txt -l esp-rs-dev-01 --extra-vars "install_python=true install_vim=true install_rust=true"
 ```
@@ -143,11 +143,10 @@ ansible-playbook  -vv ./playbooks/setup_general_comm_dev.yaml --vault-password-f
 ### To setup a Matter.js on the device matter_js_test
 ```
 # First install the general communication development environment playbook to setup python and vim 
-ansible-playbook  -vv ./playbooks/setup_general_comm_dev.yaml --vault-password-file ./vault/vault_password.txt -l matter_js_test --extra-vars "install_python=true python_version=3.12.5"
+ansible-playbook  -vv ./playbooks/setup_general_comm_dev.yaml --vault-password-file ./vault/vault_password.txt -l matter_js_test --extra-vars "install_python=true python_version=3.12.9"
 
 # Now setup matter.js and its dependencies 
-ansible-playbook  -vv ./playbooks/install_matter.yaml --vault-password-file ./vault/vault_password.txt -l matter_js_test --extra-vars "install_nodejs=true install_matterjs=3.12.5"
-
+ansible-playbook  -vv ./playbooks/install_matter.yaml --vault-password-file ./vault/vault_password.txt -l matter_js_test --extra-vars "install_nodejs=true install_matterjs=true"
 ```
 
 ## Ansible notes
